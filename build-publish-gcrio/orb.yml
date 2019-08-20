@@ -2,7 +2,7 @@ version: 2.1
 
 description: |
   A set of commands that will build an image from a dockerfile, and publish to gcrio using a json credential
-  Source: https://github.com/
+  Source: https://github.com/IntrospectData/circle-ci-orbs/tree/master/build-publish-gcrio
 
 commands:
   build_publish:
@@ -24,11 +24,11 @@ commands:
         description: ID of the GCP project where your registry lives, by default it attempts to take the value from an env var named GCP_PROJECT_ID
     steps:
       - run:
-          name: build docker image
-          command: docker build -t gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:latest
-      - run:
           name: log in to gcr.io docker registry
           command: echo << parameters.gcr_io_key >> | docker login -u _json_key --password-stdin https://gcr.io
+      - run:
+          name: build docker image
+          command: docker build -t gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:latest .
       - run:
           name: push image to gcr.io
           command: docker push gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:latest
