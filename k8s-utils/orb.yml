@@ -1,0 +1,65 @@
+version: 2.1
+
+description: |
+  A set of commands that will enable interaction with Kubernetes deployments.
+  Source: https://github.com/IntrospectData/circle-ci-orbs/tree/master/k8s-utils
+
+commands:
+  authenticate:
+    description:
+      Command that will be used to authenticate to k8s.
+      Required parameters are k8s-ca-cert <string>, k8s-sa-name <string>, k8s-token <string>. These variables are assumed to have corresponding env variables by default.
+    parameters:
+      k8s-ca-cert:
+        type: string
+        default: $K8S_CA_CERTIFICATE
+        description: Credential string for authing to k8s cluster
+      k8s-sa-name:
+        type: string
+        default: $K8S_SERVICE_ACCOUNT_NAME
+        description: SA string for authing to k8s cluster
+      k8s-token:
+        type: string
+        default: $K8S_BEARER_TOKEN
+        description: Token string for authing to k8s cluster
+      k8s-api-url:
+        type: string
+        default: $K8S_API_URL
+        description: API URL which this will auth to
+    steps:
+      - run:
+          name: set up environment
+          command: |
+            mkdir -p $HOME/.kube 
+            export KUBECONFIG=$HOME/.kube/current-cluster
+      - run:
+          name: configure context
+          command: |
+            kubectl config set-credentials << parameters.k8s-sa-name >> --token=<< parameters.k8s-token >>
+            echo -e "<< parameters.k8s-ca-cert >>" > $HOME/.kube/public_ca.pem
+            kubectl config set-cluster current-cluster --server=<< parameters.k8s-api-url >> --certificate-authority=$HOME/.kube/public_ca.pem
+            kubectl config set-context current-cluster --cluster=current-cluster --user=<< parameters.k8s-sa-name >>
+      - run:
+          name: use context
+          command: kubectl config use-context current-cluster
+  update:
+    description:
+      Command that will be used to update an existing deployment.
+      Required parameters are namespace <string> and deployment_name <string> and defaults to corresponding env variables
+    parameters:
+      namespace:
+        type: string
+        default: $K8s_NAMESPACE
+        description: namespace in which to deploy
+      deployment_name:
+        type: string
+        default: $K8s_DEPLOYMENT_NAME
+        description: Name of the deployment to be updated
+    steps:
+      - run:
+          name: discover deployment
+          command: deployment=$(kubectl -n << parameters.namespace >> get deployments | grep "<< parameters.deployment_name >>" | sed 's/\-site.*/-site/')
+      - run:
+          name: patch deployment
+          command: kubectl patch deployment $deployment -n << parameters.namespace >> -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+
