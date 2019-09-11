@@ -2,6 +2,7 @@ version: 2.1
 
 description: |
   A set of commands that will enable interaction with Kubernetes deployments.
+  Image : https://hub.docker.com/r/introspectdata/k8s-util
   Source: https://github.com/IntrospectData/circle-ci-orbs/tree/master/k8s-utils
 
 commands:
