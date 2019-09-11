@@ -58,7 +58,7 @@ commands:
     steps:
       - run:
           name: discover deployment
-          command: deployment=$(kubectl -n << parameters.namespace >> get deployments | grep "<< parameters.deployment_name >>" | sed 's/\-site.*/-site/')
+          command: deployment=$(kubectl -n << parameters.namespace >> get deployments | grep "<< parameters.deployment_name >>" | sed 's/\"<< parameters.deployment_name >>".*/"<< parameters.deployment_name >>"/')
       - run:
           name: patch deployment
           command: kubectl patch deployment $deployment -n << parameters.namespace >> -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
