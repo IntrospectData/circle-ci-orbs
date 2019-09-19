@@ -31,7 +31,7 @@ commands:
       - run:
           name: set up environment
           command: |
-            mkdir -p $HOME/.kube 
+            mkdir -p $HOME/.kube
             export KUBECONFIG=$HOME/.kube/current-cluster
       - run:
           name: configure context
@@ -59,8 +59,7 @@ commands:
     steps:
       - run:
           name: discover deployment
-          command: deployment=$(kubectl -n << parameters.namespace >> get deployments | grep "<< parameters.deployment_name >>" | sed 's/\"<< parameters.deployment_name >>".*/"<< parameters.deployment_name >>"/')
+          command: deployment=$(kubectl --insecure-skip-tls-verify -n << parameters.namespace >> get deployments | grep "<< parameters.deployment_name >>" | sed 's/\"<< parameters.deployment_name >>".*/"<< parameters.deployment_name >>"/')
       - run:
           name: patch deployment
-          command: kubectl patch deployment $deployment -n << parameters.namespace >> -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
-
+          command: kubectl --insecure-skip-tls-verify patch deployment $deployment -n << parameters.namespace >> -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
