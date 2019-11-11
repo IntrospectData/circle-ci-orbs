@@ -14,6 +14,10 @@ commands:
         type: string
         default: $CIRCLE_PROJECT_REPONAME
         description: Name of the image that will be pushed to GCR_IO, by default it is the predefined CIRCLE_PROJECT_REPONAME
+      tag:
+        type: string
+        default: latest
+        description: String to tag the image with.
       gcr_io_key:
         type: string
         default: $GCR_IO_KEY
@@ -28,7 +32,7 @@ commands:
           command: echo << parameters.gcr_io_key >> | docker login -u _json_key --password-stdin https://gcr.io
       - run:
           name: build docker image
-          command: docker build -t gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:latest .
+          command: docker build -t gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >> .
       - run:
           name: push image to gcr.io
-          command: docker push gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:latest
+          command: docker push gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >>
