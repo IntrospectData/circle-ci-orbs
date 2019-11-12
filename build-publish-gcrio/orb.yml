@@ -10,13 +10,13 @@ commands:
       A 3 step command that will fulfill the purpose of the orb.
       Required parameters are image <string> and gcr_io_key <string>
     parameters:
-      dockerfile: 
-        type: string 
-        default: Dockerfile 
-        description: Path to the docker file to use 
-       docker_context: 
-        type: string 
-        default: . 
+      dockerfile:
+        type: string
+        default: Dockerfile
+        description: Path to the docker file to use
+      docker_context:
+        type: string
+        default: .
         description: Path to use for the docker context when building the container
       image:
         type: string
