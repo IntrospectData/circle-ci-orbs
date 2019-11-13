@@ -1,0 +1,112 @@
+version: 2.1
+
+description: |
+  A basic orb to handle re-tagging of an existing container
+
+commands:
+  build_test:
+    description:
+      A basic orb to handle re-tagging of an existing container
+    parameters:
+      test_data_url:
+        type: string
+        default: https://storage.googleapis.com/introspectdata-cicd-pipeline-assets/webapp/media/test-0.2.0.tar.gz
+        description: URL to download test data from
+      pg_user:
+        type: string
+        default: webapp-user
+        description: DB access user
+      pg_host:
+        type: string
+        default: localhost
+        description: Host to use for accessing the db
+      pg_name:
+        type: string
+        default: webapp-db
+        description: Name of the db
+      pg_password:
+        type: string
+        default: webapp-password
+        description: password for accessing the db
+      pg_port:
+        type: string
+        default: "5432"
+        description: Port to access postgres on
+      django_settings_module:
+        type: string
+        default: _test_app.settings
+        description: Settings module to use for testing
+      test_parallel_processes:
+        type: string
+        default: "12"
+        description: Number of tests to run in parallel
+      test_module_path:
+        type: string
+        default: ""
+        description: Module path (dot notation) of the subset of tests to run
+    steps:
+      - restore_cache:
+          key: app-{{ checksum "Pipfile.lock" }}
+      - restore_cache:
+          key: app-dev-{{ checksum "Pipfile.lock" }}
+      - run:
+          name: Export env variables
+          command: |
+            echo "POSTGRES_PASSWORD=<< parameters.pg_password >>" >> $BASH_ENV
+            echo "POSTGRES_USER=<< parameters.pg_user >>" >> $BASH_ENV
+            echo "POSTGRES_DB=<< parameters.pg_name >>" >> $BASH_ENV
+            echo "export DATABASE_HOST=<< parameters.pg_host >>" >> $BASH_ENV
+            echo "export DATABASE_PASSWORD=<< parameters.pg_password >>" >> $BASH_ENV
+            echo "export DATABASE_USER=<< parameters.pg_user >>" >> $BASH_ENV
+            echo "export DATABASE_DB=<< parameters.pg_name >>" >> $BASH_ENV
+            echo "export DATABASE_PORT='<< parameters.pg_port >>'" >> $BASH_ENV
+            echo "export CACHE_DEFAULT_BACKEND="django.core.cache.backends.locmem.LocMemCache"" >> $BASH_ENV
+            echo "export CELERY_RESULT_BACKEND=redis://localhost:6379/0" >> $BASH_ENV
+            echo "export CELERY_BROKER_URL=redis://localhost:6379/1" >> $BASH_ENV
+            echo "export CACHE_DEFAULT_LOCATION=default-cache" >> $BASH_ENV
+            echo "export TEST_DATA_DL_URL=<< parameters.test_data_url >>" >> $BASH_ENV
+            echo "export PIPENV_VENV_IN_PROJECT=enabled" >> $BASH_ENV
+            echo "export DJANGO_SETTINGS_MODULE=<< parameters.django_settings_module >>" >> $BASH_ENV
+            echo "export TESTING=1" >> $BASH_ENV
+      - run:
+          name: conditionally download and unarchive test data
+          command: |
+            if [ ! -d test ]; then
+              if [ -z "$TEST_DATA_DL_URL" ]; then
+                echo "No test data url was supplied... skipping"
+              else
+                curl -o /tmp/test.tar.gz $TEST_DATA_DL_URL
+                tar xvf /tmp/test.tar.gz -C ./
+              fi
+            fi
+      - run:
+          name: install core dependencies
+          command: |
+            pipenv sync
+      - save_cache: # ** special step to save dependency cache **
+          key: app-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ./.venv
+            - ./test
+      - run:
+          name: install core dependencies
+          command: |
+            pipenv sync -d
+      - save_cache: # ** special step to save dependency cache **
+          key: app-dev-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ./.venv
+            - ./test
+      - run:
+          name: Run Migrations
+          command: |
+            pipenv run ./manage.py migrate
+      - run:
+          name: Run Tests
+          command: |
+            pipenv run python manage.py test --noinput --parallel << parameters.test_parallel_processes >> << parameters.test_module_path >>
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: tr1
