@@ -84,5 +84,5 @@ commands:
     steps:
       - run:
           name: runjob
-          command: kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --image=<< parameters.image  >> -- /bin/sh -c "<< parameters.command >>"
+          command: kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure --image=<< parameters.image  >> -- /bin/sh -c "<< parameters.command >>"
 
