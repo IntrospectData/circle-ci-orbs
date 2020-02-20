@@ -89,6 +89,6 @@ commands:
       - run:
           name: runjob
           command: |
-            kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure --image=<< parameters.image  >> \
-            --overrides='{ "spec": { "containers": [ { "envFrom": [ { "configMapRef": { "name": "<< parameters.cfmap >>" } } ] } ] } }' \
-            -- /bin/sh -c "<< parameters.command >>"
+            kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure \
+            --overrides='{ "apiVersion": "batch/v1", "spec": { "ttlSecondsAfterFinished": 60, "template": { "spec": { "containers": [ { "name": "<< parameters.job_name >>", "image": "<< parameters.image >>", "command": ["/bin/sh"], "args": ["-c", "<< parameters.command >>"] , "envFrom": [ { "configMapRef": { "name": "<< parameters.cfmap >>" } } ] } ] } } } }' \
+            --image=<< parameters.image >>
