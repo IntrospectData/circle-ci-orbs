@@ -77,6 +77,10 @@ commands:
         type: string
         default: $IMAGE_STRING
         description: Image to use for job.
+      cfmap:
+        type: string
+        default: $K8S_JOB_MAP
+        description: Configmap to attach to job.
       command:
         type: string
         default: $K8S_JOB_CMD
@@ -84,5 +88,7 @@ commands:
     steps:
       - run:
           name: runjob
-          command: kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure --image=<< parameters.image  >> -- /bin/sh -c "<< parameters.command >>"
-
+          command: |
+            kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure --image=<< parameters.image  >> \
+            --overrides='{ "spec": { "containers": [ { "name": "<< parameters.job_name >>", "image": "<< parameters.image  >>", "envFrom": [ { "configMapRef": { "name": "<< parameters.cfmap >>" } } ] } ] } }' \
+            -- /bin/sh -c "<< parameters.command >>"
