@@ -60,3 +60,29 @@ commands:
       - run:
           name: patch deployment
           command: kubectl --insecure-skip-tls-verify -n << parameters.namespace >> patch deployment << parameters.deployment_name >>  -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
+  runjob:
+    description:
+      Runs a parameter defined job within the same namespace.
+      Required paramaters are namespace <string>, job_name <string>, image <string> and command <string>
+    parameters:
+      namespace:
+        type: string
+        default: $K8s_NAMESPACE
+        description: namespace in which to deploy
+      job_name:
+        type: string
+        default: $K8s_JOB_NAME
+        description: Name of the job to be ran
+      image:
+        type: string
+        default: $IMAGE_STRING
+        description: Image to use for job.
+      command:
+        type: string
+        default: $K8S_JOB_CMD
+        description: Content of job to be ran
+    steps:
+      - run:
+          name: runjob
+          command: kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --image=<< parameters.image  >> -- /bin/sh -c "<< parameters.command >>"
+
