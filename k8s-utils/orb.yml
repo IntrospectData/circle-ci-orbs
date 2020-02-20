@@ -90,5 +90,5 @@ commands:
           name: runjob
           command: |
             kubectl --insecure-skip-tls-verify -n << parameters.namespace  >> run << parameters.job_name >>-${CIRCLE_SHA1:0:7} --restart=OnFailure --image=<< parameters.image  >> \
-            --overrides='{ "spec": { "containers": [ { "name": "<< parameters.job_name >>", "image": "<< parameters.image  >>", "envFrom": [ { "configMapRef": { "name": "<< parameters.cfmap >>" } } ] } ] } }' \
+            --overrides='{ "spec": { "containers": [ { "envFrom": [ { "configMapRef": { "name": "<< parameters.cfmap >>" } } ] } ] } }' \
             -- /bin/sh -c "<< parameters.command >>"
