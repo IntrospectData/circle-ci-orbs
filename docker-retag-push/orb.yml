@@ -66,7 +66,7 @@ commands:
           name: log in to source docker registry and pull
           command: |
             if [[ -z "$RETAG_SOURCE_LOGIN_URL" || -z "$RETAG_SOURCE_LOGIN_NAME" || -z "$RETAG_SOURCE_LOGIN_PASSWORD" ]]; then
-              echo $RETAG_SOURCE_LOGIN_PASSWORD | docker login -u $RETAG_SOURCE_LOGIN_NAME --password-stdin $RETAG_SOURCE_LOGIN_URL
+              echo "${RETAG_SOURCE_LOGIN_PASSWORD}" | docker login -u $RETAG_SOURCE_LOGIN_NAME --password-stdin $RETAG_SOURCE_LOGIN_URL
             fi
             docker pull $RETAG_SOURCE_IMAGE:$RETAG_SOURCE_TAG
       - run:
@@ -77,6 +77,6 @@ commands:
           name: log into target docker registry and push
           command: |
             if [[ -z "$RETAG_TARGET_LOGIN_URL" || -z "$RETAG_TARGET_LOGIN_NAME" || -z "$RETAG_TARGET_LOGIN_PASSWORD" ]]; then
-              echo $RETAG_TARGET_LOGIN_PASSWORD | docker login -u $RETAG_TARGET_LOGIN_NAME --password-stdin $RETAG_TARGET_LOGIN_URL
+              echo "${RETAG_TARGET_LOGIN_PASSWORD}" | docker login -u $RETAG_TARGET_LOGIN_NAME --password-stdin $RETAG_TARGET_LOGIN_URL
             fi
             docker push ${RETAG_TARGET_IMAGE:-$RETAG_SOURCE_IMAGE}:${RETAG_TARGET_TAG}
