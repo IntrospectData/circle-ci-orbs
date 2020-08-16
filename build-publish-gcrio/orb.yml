@@ -47,6 +47,7 @@ commands:
           command: |
             if [[ -f "/caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz" ]]; then
               docker load < /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz
+              echo "Loaded cached docker image from /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz"
             fi
       - run:
           name: log in to gcr.io docker registry
