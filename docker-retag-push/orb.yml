@@ -1,51 +1,51 @@
 version: 2.1
 
 description: |
-  A basic orb to handle re-tagging of an existing container 
+  A basic orb to handle re-tagging of an existing container
 
 commands:
   build_publish:
     description:
-      A basic orb to handle re-tagging of an existing container 
+      A basic orb to handle re-tagging of an existing container
     parameters:
-      source_image: 
-        type: string 
+      source_image:
+        type: string
         default: $CIRCLE_PROJECT_REPONAME
         description: Image name for the source
-      source_tag: 
-        type: string 
+      source_tag:
+        type: string
         default: $CIRCLE_SHA1
         description: Image tag for the source
-      source_login_url: 
-        type: string 
+      source_login_url:
+        type: string
         default: https://gcr.io
         description: URL to use when logging into the target docker repository
-      source_login_name: 
-        type: string 
+      source_login_name:
+        type: string
         default: _json_key
         description: Username to use when logging into the source docker repo
-      source_login_password: 
-        type: string 
+      source_login_password:
+        type: string
         default: $GCR_IO_KEY
         description: Password string to use for source login to docker repo
-      target_image: 
-        type: string 
+      target_image:
+        type: string
         default: $CIRCLE_PROJECT_REPONAME
         description: Image name for the source
       target_tag:
         type: string
         default: stable
         description: Image name for the target, including the target tag
-      target_login_url: 
-        type: string 
+      target_login_url:
+        type: string
         default: ""
         description: URL to use when logging into the target docker repository
-      target_login_name: 
-        type: string 
+      target_login_name:
+        type: string
         default: ""
-        description: Username to use when logging into the target docker repo 
-      target_login_password: 
-        type: string 
+        description: Username to use when logging into the target docker repo
+      target_login_password:
+        type: string
         default: ""
         description: Password string to use for target login to docker repo
     steps:
@@ -54,25 +54,29 @@ commands:
           command: |
             echo "RETAG_SOURCE_IMAGE=<< parameters.source_image >>" >> $BASH_ENV
             echo "RETAG_SOURCE_TAG=<< parameters.source_tag >>" >> $BASH_ENV
-            echo "RETAG_SOURCE_LOGIN_URL=<< parameters.source_login_url >>" >> $BASH_ENV 
-            echo "RETAG_SOURCE_LOGIN_NAME=<< parameters.source_login_name >>" >> $BASH_ENV 
+            echo "RETAG_SOURCE_LOGIN_URL=<< parameters.source_login_url >>" >> $BASH_ENV
+            echo "RETAG_SOURCE_LOGIN_NAME=<< parameters.source_login_name >>" >> $BASH_ENV
             echo "RETAG_SOURCE_LOGIN_PASSWORD=<< parameters.source_login_password >>" >> $BASH_ENV
-            echo "RETAG_TARGET_IMAGE=<< parameters.target_image >>" >> $BASH_ENV 
+            echo "RETAG_TARGET_IMAGE=<< parameters.target_image >>" >> $BASH_ENV
             echo "RETAG_TARGET_TAG=<< parameters.target_tag >>" >> $BASH_ENV
-            echo "RETAG_TARGET_LOGIN_URL=<< parameters.target_login_url >>" >> $BASH_ENV 
-            echo "RETAG_TARGET_LOGIN_NAME=<< parameters.target_login_name >>" >> $BASH_ENV 
+            echo "RETAG_TARGET_LOGIN_URL=<< parameters.target_login_url >>" >> $BASH_ENV
+            echo "RETAG_TARGET_LOGIN_NAME=<< parameters.target_login_name >>" >> $BASH_ENV
             echo "RETAG_TARGET_LOGIN_PASSWORD=<< parameters.target_login_password >>" >> $BASH_ENV
       - run:
-          name: log in to source docker registry and pull 
-          command: | 
-            if [[ -z $RETAG_SOURCE_LOGIN_URL || -z $RETAG_SOURCE_LOGIN_NAME || -z $RETAG_SOURCE_LOGIN_PASSWORD ]]; then
+          name: log in to source docker registry and pull
+          command: |
+            if [[ -z "$RETAG_SOURCE_LOGIN_URL" || -z "$RETAG_SOURCE_LOGIN_NAME" || -z "$RETAG_SOURCE_LOGIN_PASSWORD" ]]; then
               echo $RETAG_SOURCE_LOGIN_PASSWORD | docker login -u $RETAG_SOURCE_LOGIN_NAME --password-stdin $RETAG_SOURCE_LOGIN_URL
             fi
             docker pull $RETAG_SOURCE_IMAGE:$RETAG_SOURCE_TAG
       - run:
-          name: log into target docker registry and push 
-          command: | 
-            if [[ -z $RETAG_TARGET_LOGIN_URL || -z $RETAG_TARGET_LOGIN_NAME || -z $RETAG_TARGET_LOGIN_PASSWORD ]]; then
+          name: perform retag action
+          command: |
+            docker tag $RETAG_SOURCE_IMAGE:$RETAG_SOURCE_TAG ${RETAG_TARGET_IMAGE:-$RETAG_SOURCE_IMAGE}:${RETAG_TARGET_TAG}
+      - run:
+          name: log into target docker registry and push
+          command: |
+            if [[ -z "$RETAG_TARGET_LOGIN_URL" || -z "$RETAG_TARGET_LOGIN_NAME" || -z "$RETAG_TARGET_LOGIN_PASSWORD" ]]; then
               echo $RETAG_TARGET_LOGIN_PASSWORD | docker login -u $RETAG_TARGET_LOGIN_NAME --password-stdin $RETAG_TARGET_LOGIN_URL
             fi
-            docker push $RETAG_TARGET_IMAGE:$RETAG_TARGET_TAG
+            docker push ${RETAG_TARGET_IMAGE:-$RETAG_SOURCE_IMAGE}:${RETAG_TARGET_TAG}

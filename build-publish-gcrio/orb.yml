@@ -1,5 +1,4 @@
-version: 3.0
-
+version: 2.1
 description: |
   A set of commands that will build an image from a dockerfile, and publish to gcrio using a json credential
   Source: https://github.com/IntrospectData/circle-ci-orbs/tree/master/build-publish-gcrio
@@ -42,7 +41,13 @@ commands:
           keys:
             - << parameters.cache_prefix >>-{{ .Branch }}
           paths:
-            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar
+            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz
+      - run:
+          name: load cached image
+          command: |
+            if [[ -f "/caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz" ]]; then
+              docker load < /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz
+            fi
       - run:
           name: log in to gcr.io docker registry
           command: echo << parameters.gcr_io_key >> | docker login -u _json_key --password-stdin https://gcr.io
@@ -56,11 +61,11 @@ commands:
           name: Save Docker image layer cache
           command: |
             mkdir -p /caches
-            docker save -o /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >>
+            docker save gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >> | gzip -9 > /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz
       - save_cache:
           key: << parameters.cache_prefix >>-{{ .Branch }}-{{ epoch }}
           paths:
-            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar
+            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar.gz
   build_publish:
     description:
       A 3 step command that will fulfill the purpose of the orb.
