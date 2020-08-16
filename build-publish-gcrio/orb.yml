@@ -1,10 +1,66 @@
-version: 2.1
+version: 3.0
 
 description: |
   A set of commands that will build an image from a dockerfile, and publish to gcrio using a json credential
   Source: https://github.com/IntrospectData/circle-ci-orbs/tree/master/build-publish-gcrio
 
 commands:
+  build_publish_cache:
+    description:
+      A wrapper around the same process for build_publish that also follows CircleCI's caching recommendations for docker containers.
+    parameters:
+      dockerfile:
+        type: string
+        default: Dockerfile
+        description: Path to the docker file to use
+      docker_context:
+        type: string
+        default: .
+        description: Path to use for the docker context when building the container
+      image:
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+        description: Name of the image that will be pushed to GCR_IO, by default it is the predefined CIRCLE_PROJECT_REPONAME
+      tag:
+        type: string
+        default: latest
+        description: String to tag the image with.
+      gcr_io_key:
+        type: string
+        default: $GCR_IO_KEY
+        description: Stringified JSON key for accessing a GCS Admin service account, by default it attempts to take the value from an env var named GCR_IO_KEY
+      gcp_project_id:
+        type: string
+        default: $GCP_PROJECT_ID
+        description: ID of the GCP project where your registry lives, by default it attempts to take the value from an env var named GCP_PROJECT_ID
+      cache_prefix:
+        type: string
+        default: build-publish-gcrio
+        description: Prefix for cache key for this component/build
+    steps:
+      - restore_cache:
+          keys:
+            - << parameters.cache_prefix >>-{{ .Branch }}
+          paths:
+            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar
+      - run:
+          name: log in to gcr.io docker registry
+          command: echo << parameters.gcr_io_key >> | docker login -u _json_key --password-stdin https://gcr.io
+      - run:
+          name: build docker image
+          command: docker build -f << parameters.dockerfile >> -t gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >> << parameters.docker_context >>
+      - run:
+          name: push image to gcr.io
+          command: docker push gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >>
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar gcr.io/<< parameters.gcp_project_id >>/<< parameters.image >>:<< parameters.tag >>
+      - save_cache:
+          key: << parameters.cache_prefix >>-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/<< parameters.gcp_project_id >>-<< parameters.image >>.tar
   build_publish:
     description:
       A 3 step command that will fulfill the purpose of the orb.
